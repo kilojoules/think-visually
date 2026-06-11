@@ -9,7 +9,7 @@ The headline result is that the upper bound is **deeply task- and model-dependen
 
 ![Heatmap with CIs](figures/matrix_with_cis.png)
 
-Across four small open-weight LLMs (Qwen2.5 and Llama-3.2 at 1.5B-and-3B-class) and three procedural tasks with hand-written physics verifiers, **no model wins more than one task** under verifier-guided rejection sampling at K=64. Qwen2.5-1.5B dominates the easy paper-folding task; Llama-3.2-3B is the only model with meaningful accuracy on the hard paper-folding task; and Llama-3.2-1B — the smallest model in the matrix — wins on the maze task, which has the largest answer space. Bootstrap 95% CIs (n=20 for the fold tasks, n=50 for the maze row) confirm the cell-level winners are statistically separable, not noise dressed as a pattern.
+Across four small open-weight LLMs (Qwen2.5 and Llama-3.2 at 1.5B-and-3B-class) and three procedural tasks with hand-written physics verifiers, **each task has a different point-estimate winner** under verifier-guided rejection sampling at K=64. Qwen2.5-1.5B dominates the easy paper-folding task; Llama-3.2-3B is the only model with meaningful accuracy on the hard paper-folding task; and Llama-3.2-1B — the smallest model in the matrix — posts the best score on the maze task, which has the largest answer space. Two honesty notes up front, expanded in "What would change my mind": of the three winners, only fold1's is statistically separable from its runner-up (exact 95% CIs are on every cell, Fisher exact tests in the caveats); and the maze row has a known prompt confound awaiting a re-run.
 
 The implication for monitoring-as-selection: **a monitor cannot rescue behavior the model cannot produce**, and which behaviors a model can produce depends on the task structure in a way that doesn't correlate with parameter count. Model choice is upstream of what monitoring can fix.
 
@@ -20,7 +20,7 @@ The harness is intentionally minimal. Two tasks come from the spatial-reasoning 
 - **Paper folding** (a stripped-down version of [MentalBlackboard](https://arxiv.org/abs/2602.19357), which itself adapts the psychometric Paper Folding Test). A 4×4 grid is folded one or two times, a single hole is punched through the stacked layers at a specified position, and the model is asked where the holes appear on the unfolded paper.
 - **Maze navigation** on a procedurally generated 5×5 grid. The model is given the maze as ASCII, asked for a U/D/L/R path from start to goal.
 
-Both tasks have **deterministic physics-based verifiers** that independently simulate the answer from the inputs — no precomputed-answer leakage. A path either reaches the goal traversing open cells, or it doesn't. A set of unfolded holes either re-folds to the punched position with no missing or extra cells, or it doesn't.
+Both tasks have **deterministic physics-based verifiers** that independently simulate the answer from the inputs — no precomputed-answer leakage. The maze verifier walks the proposed moves and accepts as soon as the walk reaches the goal on open cells (trailing moves after goal-arrival are not checked — a leniency that matters below). A set of unfolded holes either re-folds to the punched position with no missing or extra cells, or it doesn't.
 
 The scaffold under test is **verifier-guided rejection sampling**: sample up to K responses from the model at temperature 0.8, return the first one the verifier accepts (or the final attempt if none pass). This is the cleanest test bed for "monitor-as-selector" — the verifier is the strongest possible monitor at the output stage (perfect, rule-based, no false positives) and the scaffold lets it pick from K independent draws.
 
@@ -33,16 +33,18 @@ Four models, all served locally via Ollama:
 
 These were selected to be the largest text-only models that fit safely on 16 GB unified memory. (Yes, I tried multimodal VLMs first — Qwen2.5-VL-3B turns out to load at 11 GB resident under Ollama, which pushed free RAM to 64 MB on my machine before I killed the run. That was an unintended but informative finding: the resident-size ceiling for local consumer-hardware research is text-only models in the 1.5-3B range.)
 
-## Result 1 — No single model wins more than one task
+## Result 1 — Each task has a different point-estimate winner
 
-The headline matrix shows accuracy at K=64 with bootstrap 95% CIs. The pattern is striking:
+The headline matrix shows accuracy at K=64 with exact 95% binomial CIs (Clopper–Pearson). The pattern:
 
-- **Qwen2.5-1.5B wins fold1** (55% [35, 75]) but collapses to 0% on fold2.
-- **Llama-3.2-3B wins fold2** (20% [5, 40]). It's the highest result anywhere on fold2; the next-best is Llama-1B at 10%.
-- **Llama-3.2-1B wins maze** (54% [40, 68]), with the 1B parameter count beating every larger model.
-- **Qwen2.5-3B loses everywhere** — 10% on fold1, 0% on the other two tasks.
+- **Qwen2.5-1.5B wins fold1** (55% [32, 77]) but collapses to 0% [0, 17] on fold2. This is the one winner that statistically separates from its runner-up (11/20 vs 3/20, Fisher exact p=0.019).
+- **Llama-3.2-3B leads fold2** (20% [6, 44]). It's the highest result anywhere on fold2 — but at 4/20 vs Llama-1B's 2/20 it is a point-estimate lead only (p=0.66).
+- **Llama-3.2-1B leads maze** (54% [39, 68]), with the 1B parameter count posting the best score. Also not conclusive (see below), and this row carries a prompt confound.
+- **Qwen2.5-3B never wins** — 10% on fold1 (which does edge Llama-1B's 5%), 0% on the other two tasks.
 
-The Llama-1B-vs-Qwen-1.5B maze comparison was the most contested cell. At the initial n=20 it was 50% vs 30% with heavily overlapping CIs ([30, 70] vs [10, 50]). Running n=50 on the full maze row tightened the picture: 54% [40, 68] vs 34% [22, 48]. The lower CI bound of the Llama-1B mean is *above* the point estimate of Qwen-1.5B, so the 20-pp lead is statistically meaningful at n=50 — not n=20 noise.
+One more caution on the pattern itself: with four models and three tasks, three *distinct* winners occur 37.5% of the time even if all four models were identical. "Three tasks, three winners" is a description of this matrix, not a statistically established law.
+
+The Llama-1B-vs-Qwen-1.5B maze comparison was the most contested cell. At the initial n=20 it was 50% vs 30% with heavily overlapping CIs. Running n=50 on the full maze row tightened the picture: 54% [39, 68] vs 34% [21, 49] — suggestive, but a Fisher exact test on 27/50 vs 17/50 gives p=0.069, short of conventional significance. And there is a bigger problem with the maze row, which I found after first publishing this post and am leaving in plain view: **the prompt's own example string solves half the mazes.** Every maze fixes the start at the top-left open cell and the goal at the bottom-right; the prompt ends with `Example: D,D,R,R,U,R`; and the verifier accepts the moment a walk reaches G. The example string verbatim solves 24 of the 50 test mazes. A model that approximately parrots the example collects free wins, so every number in the maze row sits against a ~48% parrot baseline rather than a ~0% one. A re-run with a never-solving example string is queued; until then, treat the maze row as upper bounds with unknown parrot contamination.
 
 ## Result 2 — Coverage, not selection, is the limit
 
@@ -52,15 +54,17 @@ Because I tried a stronger selector and it didn't help.
 
 The verifier is binary — a sample either passes or fails. I also implemented a **soft scorer** that returns partial credit (count of correctly-identified holes, minus a penalty for spurious extras). Then I implemented a "best of K by soft score" scaffold: generate K samples, score every one, return the highest-scoring. This is the PTRM analog of best-Q@K selection ([Sghaier et al. 2026, arXiv:2605.19943](https://arxiv.org/abs/2605.19943)) — a strictly more powerful selection rule than rejection sampling, since it can pick "almost-correct" answers that the binary verifier rejects.
 
-On fold1 at K=64 with Qwen-1.5B, the binary verifier gets 55%. The soft scorer with the same model and K gets **50%** — within statistical noise. Two PTRM-style selection improvements (soft scoring, partial credit) tracking rejection sampling to within 5pp tells me the plateau is **upstream of selection**: the model is failing to *generate* correct answers, and no scorer can rescue what was never produced.
+On fold1 at K=64 with Qwen-1.5B, the binary verifier gets 55%. The soft scorer with the same model and K gets **50%** — within statistical noise. Two PTRM-style selection improvements (soft scoring, partial credit) tracking rejection sampling to within 5pp tells me the ceiling is **upstream of selection**: the model is failing to *generate* correct answers, and no scorer can rescue what was never produced.
 
-This matches the K-sweep curve on fold1 (Qwen-1.5B). Accuracy rises log-cleanly from 5% (K=1) → 65% (K=256), then plateaus. If selection were the bottleneck, K=256 with a perfect verifier would approach 100%. The plateau at ~65% says the model can't sample the correct answer for the remaining ~35% of instances, no matter how many tries it gets.
+This matches the K-sweep curve on fold1 (Qwen-1.5B). Accuracy rises from 5% (K=1) to 65% (K=256), but with strongly diminishing returns: roughly 20pp per doubling of K through the middle of the curve, collapsing to ~5pp per doubling over the last two measured points (60% at K=128, 65% at K=256). I did not measure beyond K=256, so I can't claim a literal plateau — the curve is still creeping up at the final point. What I can say: if selection were the bottleneck, a perfect verifier at K=256 should be approaching 100%, and it is nowhere close; extrapolating the observed ~5pp-per-doubling tail, reaching even 90% would take K beyond 10,000.
 
-## Result 3 — The smallest model wins on the largest answer space
+## Result 3 — The smallest model leads on the largest answer space (with a caveat)
 
-The Llama-1B-wins-maze finding is counterintuitive enough that I want to flag it explicitly. The maze task has the largest answer space of the three (~4⁷ ≈ 16,000 length-7 paths). Naively, you'd expect the largest model to do best.
+The Llama-1B-leads-maze finding is counterintuitive enough that I want to flag it explicitly. The maze task has the largest answer space of the three (~4⁷ ≈ 16,000 length-7 paths). Naively, you'd expect the largest model to do best.
 
-What I think is happening is the coverage hypothesis in microcosm. The 1B model has a higher-entropy output distribution: it produces a wider variety of attempted paths, including more wrong ones, but also including more *different* wrong ones. When you give it K shots and accept the first valid path, that diversity translates to higher hit rate on a large answer space.
+What I *think* is happening is the coverage hypothesis in microcosm. The 1B model has a higher-entropy output distribution: it produces a wider variety of attempted paths, including more wrong ones, but also including more *different* wrong ones. When you give it K shots and accept the first valid path, that diversity translates to higher hit rate on a large answer space.
+
+But the prompt confound described in Result 1 cuts directly against this interpretation. If half the mazes are solvable by echoing the prompt's example, then a higher-entropy model also has more chances to *approximately echo the example* — and what looks like "diversity finding valid paths" could partly be "diversity stumbling into the parrot solution." The two stories make the same prediction on this data. They come apart on the planned re-run with a never-solving example: if Llama-1B's lead survives, the diversity story stands; if the whole row collapses toward zero, the maze was easier than its answer-space arithmetic suggested all along. I'm publishing the confound rather than waiting because the failure mode — a plausible mechanistic story told over contaminated data — is exactly the kind of thing this post is about.
 
 The 3B Llama compresses its distribution around a smaller set of "templates" that are usually slightly-wrong-in-the-same-way. Its mean wall-clock per K=64 instance was actually *higher* than the 1B (38s vs ~200s vs ~22s vs ~14s for the four models — the 1B's longer time reflects the verifier rejecting more diverse attempts before accepting one).
 
@@ -83,11 +87,13 @@ A possibly-related observation from this dataset: the model that is *worst* unde
 
 ## What would change my mind
 
-n=20 on fold1 and fold2; n=50 on the maze row. The CIs are honest — Qwen-3B fold1 [0, 25] doesn't statistically separate from Llama-3B fold1 [0, 30]. The cell-level winners that *are* statistically meaningful are: Qwen-1.5B fold1, Llama-3B fold2, Llama-1B maze. Everything else is suggestive.
+n=20 on fold1 and fold2; n=50 on the maze row. Exact binomial CIs are on every cell, and Fisher exact tests on each winner-vs-runner-up pair give: fold1 p=0.019 (separable), fold2 p=0.66 (noise-compatible), maze p=0.069 (suggestive). So of the three "winners," exactly one is statistically established. Add the 37.5% base rate of seeing three distinct winners under an identical-models null, and the honest summary is: the *cells* contain real signal (Qwen-1.5B's fold1 dominance, Qwen-3B's maze zero at 0/50, the fold1 K-sweep), while the *three-winners pattern* is an observation that needs more data to become a claim.
 
-The "Qwen-specific mode collapse" pattern would benefit from a third Qwen size (0.5B or 7B). Right now it's two data points within the Qwen2.5 family. Within Llama-3.2, the pattern is different: 1B and 3B trade wins by task, neither is a universal loser. Could be a family-level training-data difference, could be tokenizer effects, could be sampling-temperature interactions — I don't have the experiments to disambiguate.
+The maze-row confound is already documented in Results 1 and 3: the prompt's example string solves 24/50 mazes, the verifier's accept-on-arrival leniency lets approximate echoes through, and the re-run with a neutral example is the single highest-priority follow-up. I'd treat any interpretation resting on the maze row as provisional until that lands.
 
-The most direct way to break this finding would be to show that the coverage limit is an artifact of my prompting. I tested a few prompt variants on Qwen-3B and the failure mode is sticky — the model produces the same malformed answer templates across phrasings. But I haven't done a systematic prompt-sensitivity study, and someone who did might find that the coverage gap closes substantially.
+The "Qwen-specific mode collapse" pattern would benefit from a third Qwen size (0.5B or 7B). Right now it's two data points within the Qwen2.5 family. Within Llama-3.2, the pattern is different: 1B and 3B trade leads by task, neither loses everywhere. Could be a family-level training-data difference, could be tokenizer effects, could be sampling-temperature interactions — I don't have the experiments to disambiguate.
+
+The most direct way to break the coverage finding would be to show that it is an artifact of my prompting. I tested a few prompt variants on Qwen-3B and the failure mode is sticky — the model produces the same malformed answer templates across phrasings. But I haven't done a systematic prompt-sensitivity study, and someone who did might find that the coverage gap closes substantially. (The maze example-string discovery is itself a data point here: prompt details matter more than I initially credited.)
 
 The work that *would* be needed to make this a real paper, not a blog post: n=50 on all twelve cells (currently only the maze row has it); a third model family (Mistral, Gemma); seed variance across multiple runs of the harness; and a frontier-model row (GPT-5, Claude Opus 4.5, Gemini 3) as a ceiling baseline.
 
@@ -107,7 +113,7 @@ Everything ran on a 16 GB MacBook Air M-series via Ollama. Total cash: $0. Total
 
 The harness is one Python file per scaffold (`bare`, `self_consistency`, `verifier_guided`, `best_partial`, `whiteboard_of_thought`) plus one per task (`folding.py`, `maze.py`). Verifiers are pure Python — for paper folding, the simulator independently re-applies the fold sequence to the proposed unfolded holes and checks they stack at the punched position. For maze, the verifier walks the proposed move sequence and checks open-cell-only + reaches-goal.
 
-K-sweeps use `--start-seed` to add instances incrementally without re-running the whole sweep; bootstrap CIs use 10,000 resamples per cell with a fixed RNG seed.
+K-sweeps use `--start-seed` to add instances incrementally without re-running the whole sweep. Confidence intervals are exact 95% binomial (Clopper–Pearson), computed by inverting the binomial CDF — an earlier version of this post used bootstrap CIs, which degenerate to [0, 0] on zero-success cells and are strictly worse than the exact interval at these sample sizes.
 
 Memory-safety is enforced by an `available_gb < 1.0` abort check before every model call. (Initially I used `free_gb`, which is a poor measure on macOS — most "free" memory is actually inactive cache that can be reclaimed. The abort threshold should be on `available`, not `free`.)
 

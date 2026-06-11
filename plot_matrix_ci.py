@@ -1,4 +1,4 @@
-"""Heatmap with bootstrap 95% CIs shown in each cell."""
+"""Heatmap with exact 95% binomial CIs (Clopper–Pearson) shown in each cell."""
 from __future__ import annotations
 import json
 import matplotlib
@@ -38,8 +38,8 @@ ax.set_xticklabels([
 ax.set_yticks(range(len(models)))
 ax.set_yticklabels(models, fontsize=11)
 ax.set_title(
-    "Verifier-guided rejection sampling, K=64, bootstrap 95% CIs in brackets\n"
-    "Three tasks, three different winners — and one universal loser",
+    "Verifier-guided rejection sampling, K=64 — exact 95% binomial CIs (Clopper–Pearson)\n"
+    "Three point-estimate winners; only fold1's is statistically separable (Fisher p=0.019)",
     fontsize=12,
 )
 
@@ -61,7 +61,7 @@ plt.savefig(out, dpi=140)
 print(f"Saved {out}")
 
 # Also print a clean table
-print("\nFinal table (K=64, with bootstrap 95% CIs):")
+print("\nFinal table (K=64, exact 95% binomial CIs):")
 print(f"{'Model':14s}  {'fold1':>20s}  {'fold2':>20s}  {'maze':>20s}")
 for i, m in enumerate(models):
     cells = []

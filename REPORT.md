@@ -4,46 +4,50 @@
 **Hardware:** 16 GB MacBook (Apple Silicon), Ollama
 **Total cash spent:** $0
 **Total wall-clock:** ~8 hours including model pulls, two near-OOM incidents, five K-sweep campaigns
-**Final chart:** `all_ksweeps.png`
+**Final chart:** `figures/matrix_with_cis.png`
 
 ---
 
-## TL;DR — final headline (4 models × 3 tasks at K=64, bootstrap 95% CIs)
+## TL;DR — final headline (4 models × 3 tasks at K=64, exact 95% binomial CIs)
 
-> **Three tasks, three different winners — and one universal loser.** Across four small LLMs and three procedural tasks under verifier-guided rejection sampling, no model wins more than one task; the smallest model (Llama-1B) wins on the task with the largest answer space; and the lower CI bound of each winner exceeds the point estimate of the next-best, confirming task-specific winners are statistically separable, not n=20 noise.
+> **Three tasks, three different point-estimate winners — and one model that never wins.** Across four small LLMs and three procedural tasks under verifier-guided rejection sampling, each task has a different best model at K=64. Statistical strength varies sharply by cell: only the fold1 winner separates from its runner-up (Fisher exact p=0.019); fold2 (p=0.66) and maze (p=0.069) are point-estimate leads. The maze row additionally carries a prompt confound (below) and is awaiting a re-run.
 
-![Cross-model × cross-task matrix with CIs](matrix_with_cis.png)
+![Cross-model × cross-task matrix with CIs](figures/matrix_with_cis.png)
 
 | Model | fold1 (n=20) | fold2 (n=20) | maze (n=50) |
 |---|---:|---:|---:|
-| **Qwen2.5-1.5B** | **55%** [35, 75] | 0% [0, 0] | 34% [22, 48] |
-| Qwen2.5-3B | 10% [0, 25] | 0% [0, 0] | 0% [0, 0] ← universal loser |
-| Llama-3.2-1B | 5% [0, 15] | 10% [0, 25] | **54%** [40, 68] ← smallest wins hardest |
-| Llama-3.2-3B | 15% [0, 30] | **20%** [5, 40] | 30% [18, 42] |
+| **Qwen2.5-1.5B** | **55%** [32, 77] | 0% [0, 17] | 34% [21, 49] |
+| Qwen2.5-3B | 10% [1, 32] | 0% [0, 17] | 0% [0, 7] ← never wins |
+| Llama-3.2-1B | 5% [0, 25] | 10% [1, 32] | **54%** [39, 68] ← smallest leads hardest |
+| Llama-3.2-3B | 15% [3, 38] | **20%** [6, 44] | 30% [18, 45] |
 
-The maze row was re-run at n=50 (vs n=20 for the other rows) per the idea-critic's specific guardrail: the Llama-1B-wins-maze finding is the most counterintuitive and most quotable, and the cell most exposed to noise at n=20. At n=50 it holds — Llama-1B's lower CI bound (40%) exceeds Qwen-1.5B's point estimate (34%), 20-pp lead is statistically meaningful.
+CIs are exact binomial (Clopper–Pearson) via `compute_cis.py`. An earlier version of this report used bootstrap CIs, which degenerate to [0, 0] on zero-success cells; the exact intervals above replace them.
+
+The maze row was re-run at n=50 (vs n=20 for the other rows) per the idea-critic's specific guardrail: the Llama-1B-leads-maze finding is the most counterintuitive and most quotable, and the cell most exposed to noise at n=20. At n=50 the point-estimate lead holds (54% vs 34%), but a Fisher exact test on 27/50 vs 17/50 gives p=0.069 — suggestive, not conclusive. (The earlier claim that "the winner's lower CI bound exceeds the runner-up's point estimate" was both a non-standard criterion and, on the exact intervals, no longer true for fold2.)
+
+**⚠ Maze-row confound (discovered post-hoc, re-run queued).** The maze prompt ends with `Example: D,D,R,R,U,R`. Start and goal are fixed at the top-left/bottom-right open cells, and the verifier accepts as soon as the walked path reaches G (trailing moves unchecked) — so that example string *verbatim* solves 24/50 of the test mazes. Every maze accuracy therefore sits against a ~48% parrot baseline, not a ~0% one, and cross-model maze comparisons partly measure propensity-to-echo-the-example. Fix: neutral never-solving example + full maze-row re-run (4 models × n=50 × K=64).
 
 **Five observations:**
 
-1. **No model dominates.** Different model on top for each of three tasks.
-2. **Qwen-3B is universally bad** — 0% on two of three, 10% on the third. Mode collapse across task structure.
-3. **Llama-1B (the *smallest*) wins on maze**, the task with the largest answer space (~16,384 length-7 paths). Counterintuitive — but explained: maze rewards diverse exploration of an enormous answer space, and the 1B model's looser distribution explores more.
+1. **No model dominates.** Different model on top for each of three tasks — though note three distinct winners arise 37.5% of the time under an identical-models null (4·3·2/4³), so this is descriptive, not inferential.
+2. **Qwen-3B never wins** — 0% on two of three, 10% on the third (which still edges Llama-1B's 5%). Mode collapse across task structure.
+3. **Llama-1B (the *smallest*) leads on maze**, the task with the largest answer space (~16,384 length-7 paths). The diversity explanation (looser distribution explores more) is plausible but currently confounded — a higher-entropy model also echoes the prompt example more often, and the example solves 48% of mazes. The re-run disambiguates.
 4. **Within Qwen, scaling 1.5B → 3B is inverse** (55→10 on fold1, 30→0 on maze, 0→0 on fold2). Within Llama, scaling 1B → 3B is mixed but mostly normal-or-flat.
 5. **Three of four models hit nonzero on fold2** (Qwen-3B is the holdout). The MentalBlackboard "difficulty cliff" turns out to be Qwen-1.5B-specific at this K, not universal.
 
 ### fold1 detail: K-scaling curves
 
-![Cross-family fold1](cross_family_fold1.png)
+![Cross-family fold1](figures/cross_family_fold1.png)
 
 ## The five supporting findings (full K=1→256 sweep, multi-task)
 
-> 1. **Main K-sweep:** `qwen2.5:1.5b` + verifier-guided on 1-fold paper folding rises log-cleanly **5% (K=1) → 65% (K=256)**, plateauing around K=128.
+> 1. **Main K-sweep:** `qwen2.5:1.5b` + verifier-guided on 1-fold paper folding rises **5% (K=1) → 65% (K=256)** with strongly diminishing returns (~5pp per doubling over the last two measured points; not measured beyond K=256, so "plateau" is not claimable).
 > 2. **Inverse scaling within Qwen family:** `qwen2.5:3b` performs *worse* than `qwen2.5:1.5b` at every K (10% vs 55% at K=64). **Qwen-specific** — does not replicate within the Llama family.
 > 3. **Difficulty cliff replicated:** `qwen2.5:1.5b` on 2-fold paper folding = **0/20 across all K**. Mirrors MentalBlackboard at miniature scale.
-> 4. **Soft scoring doesn't help:** PTRM-style `best_partial` tracks `verifier_guided` to within 5pp — confirming the plateau is **coverage-limited, not selection-limited**.
+> 4. **Soft scoring doesn't help:** PTRM-style `best_partial` tracks `verifier_guided` to within 5pp — confirming the ceiling is **coverage-limited, not selection-limited**.
 > 5. **Different task, similar shape:** 5×5 maze rises 0% → 30% at K=64 — same log-rising structure with lower ceiling.
 
-![All curves](all_ksweeps.png)
+![All curves](figures/all_ksweeps.png)
 
 ---
 
@@ -95,7 +99,7 @@ This is **catastrophic format mismatch + abstract-perception failure** layered t
 | 128 | 60% (12/20) | 17.1 |
 | 256 | **65%** (13/20) | 511.0 |
 
-The curve plateaus at ~60–65%. Per-correct cost: K=64 ≈ **16 s/correct**, K=256 ≈ **786 s/correct** — 50× worse cost-efficiency for 10pp accuracy gain. The bare T=0 baseline of "0%" was a measurement artifact; the model's per-attempt correctness was never zero, it was ~5%.
+Returns diminish hard past K=64 (+5pp per doubling vs ~20pp earlier in the curve; the sweep stops at K=256, so a literal plateau is unverified). Per-correct cost: K=64 ≈ **16 s/correct**, K=256 ≈ **786 s/correct** — 50× worse cost-efficiency for 10pp accuracy gain. The bare T=0 baseline of "0%" was a measurement artifact; the model's per-attempt correctness was never zero, it was ~5%.
 
 ### 3.3 Cross-family comparison: Qwen-1.5B is an outlier (4 models on fold1, n=20)
 
@@ -108,7 +112,7 @@ The curve plateaus at ~60–65%. Per-correct cost: K=64 ≈ **16 s/correct**, K=
 
 Three observations:
 
-1. **Coverage-limited plateau is the dominant failure mode across model families.** Three of four models plateau at ≤15% even at K=64. The model needs to produce correct answers *at least sometimes* for verifier-guided sampling to rescue them — and most small models in this size range don't.
+1. **Coverage-limited ceilings are the dominant failure mode across model families.** Three of four models sit at ≤15% even at K=64. The model needs to produce correct answers *at least sometimes* for verifier-guided sampling to rescue them — and most small models in this size range don't.
 2. **Inverse scaling is Qwen-specific.** Within Qwen, 3B < 1.5B by 45 percentage points. Within Llama, 3B > 1B by 10 pp. The original "bigger is worse" observation is Qwen2.5-flavored, not a general phenomenon.
 3. **Qwen-1.5B is the outlier, not Qwen-3B.** A specific combination of training data + scale puts this model in a "noisy-but-sometimes-right" regime that other models in the same parameter range don't hit. The qwen3b's tighter, cleaner output distribution rarely samples the correct template:
    - `(3,2);(3,2)` — duplicate hole
@@ -139,9 +143,9 @@ This is the **exact pattern from MentalBlackboard**: 1-fold tractable, 2-fold ne
 | 16 | **10%** |
 | 64 | **30%** |
 
-Log-rising structure like fold1 but lower ceiling (30% at K=64 vs 55%). Maze paths have more degrees of freedom (length 5–10 moves with 4 choices each), so per-attempt correctness is much lower than fold1's 5%. K-scaling works, but slower.
+Log-rising structure like fold1 but lower ceiling (30% at K=64 vs 55%). Maze paths have more degrees of freedom (length 5–10 moves with 4 choices each), so per-attempt correctness is much lower than fold1's 5%. K-scaling works, but slower. **Caveat:** all maze numbers carry the example-string confound documented in the TL;DR — the K-scaling *shape* is informative, the absolute levels less so.
 
-### 3.6 Best-partial scoring doesn't break the plateau
+### 3.6 Best-partial scoring doesn’t break the ceiling
 
 PTRM-style soft scoring (partial-credit verifier returning `hits − 0.5·extras`):
 
@@ -151,7 +155,7 @@ PTRM-style soft scoring (partial-credit verifier returning `hits − 0.5·extras
 | 16  | 10% (2/20)  | 15% |
 | 64  | **50%** (10/20) | **55%** |
 
-**Soft scoring tracks rejection sampling to within ~5pp.** Within statistical noise (n=20). The plateau is **coverage-limited**, not selection-limited — the model cannot sample correct answers for 35–45% of instances. A better scorer cannot rescue what the sampler never produces.
+**Soft scoring tracks rejection sampling to within ~5pp.** Within statistical noise (n=20). The ceiling is **coverage-limited**, not selection-limited — the model cannot sample correct answers for 35–45% of instances. A better scorer cannot rescue what the sampler never produces.
 
 **To actually break the ceiling**, we'd need a smarter sampler that **generates better candidates**, not one that selects better. Concrete options for future work:
 - **Compositional sampling**: generate one (r,c) pair at a time, accumulate verified ones — turns one hard problem into N easy sub-problems.
@@ -179,7 +183,7 @@ The gap between our measured K-curve and the "independent-sample upper bound" (i
 
 **Where our findings extend PTRM:**
 - The 3B-vs-1.5b mode-collapse result suggests that on tasks where the model has a wrong-but-confident prior, **scaling up the base model *worsens* test-time scaling**. PTRM didn't test this because their TRM is fixed at 7M params.
-- The `best_partial ≈ verifier_guided` plateau suggests **soft scoring is not the bottleneck** when the verifier is already strong. PTRM's Q head was the rate-limiting selector; ours isn't. Their gains from a stronger verifier would not appear in our setting.
+- The `best_partial ≈ verifier_guided` parity suggests **soft scoring is not the bottleneck** when the verifier is already strong. PTRM's Q head was the rate-limiting selector; ours isn't. Their gains from a stronger verifier would not appear in our setting.
 
 ---
 
@@ -195,7 +199,7 @@ The gap between our measured K-curve and the "independent-sample upper bound" (i
 
 **Isn't:**
 
-- A breakthrough on the hard tasks (fold2 = 0%, maze plateaus at 30%). Those need either much larger K, or compositional sampling, or a different model regime entirely.
+- A breakthrough on the hard tasks (fold2 = 0%, maze tops out at 30% at K=64). Those need either much larger K, or compositional sampling, or a different model regime entirely.
 - A test of generative "thinking with pictures." Vision-mode tasks remain unreachable on this hardware via Ollama.
 - An attempt to publish — n=20 gives wide confidence intervals (~30–80% for the 11/20 result). The story is clean enough for a workshop note; a real paper needs n ≥ 50 per cell and a frontier-model upper-bound baseline.
 
@@ -218,15 +222,15 @@ In `/Users/julianquick/visual_reasoning_mvp/`:
 | File | Contents |
 |---|---|
 | `REPORT.md` | This file |
-| **`all_ksweeps.png`** | **The headline chart** |
-| `ksweep_fold1.png` | qwen1.5 fold1 curve alone, with independent-sample upper bound |
+| **`figures/all_ksweeps.png`** | **The headline chart** |
+| `figures/ksweep_fold1.png` | qwen1.5 fold1 curve alone, with independent-sample upper bound |
 | `results_moondream.csv` | 120 Moondream trials (§3.1) |
 | `results_qwen15_ksweep_fold1.csv` | qwen1.5 fold1 K=1,4,16,128,256 |
 | `results_qwen15_vg64_n20_fold1_txt.csv` | qwen1.5 fold1 K=64 (the K=64 row) |
 | `results_ksweep_qwen25_3b_fold1_verifier_guided.csv` | qwen3b fold1 — mode collapse |
 | `results_ksweep_qwen25_15b_fold2_verifier_guided.csv` | fold2 — difficulty cliff |
 | `results_ksweep_qwen25_15b_maze_verifier_guided.csv` | maze — slower-rising curve |
-| `results_ksweep_qwen25_15b_fold1_best_partial.csv` | best_partial — plateau confirmed |
+| `results_ksweep_qwen25_15b_fold1_best_partial.csv` | best_partial — coverage ceiling confirmed |
 | `models.py`, `scaffolds.py`, `tasks/maze.py`, `tasks/folding.py` | Library |
 | `memsafe.py` | Memory safety helpers |
 | `run.py`, `run_one_case.py`, `run_k_sweep.py` | Harnesses |

@@ -1,4 +1,10 @@
-"""Multi-curve comparison plot: model × task × scaffold."""
+"""Multi-curve comparison plot: Qwen-family K-sweeps (model × task × scaffold).
+
+Coverage note: this figure plots the sweeps that were actually run — five
+Qwen-centric curves plus nothing from the Llama family (Llama models were
+only swept on their own per-task files at fewer K points). Do not caption
+it as "every model × task".
+"""
 import csv
 import matplotlib
 matplotlib.use("Agg")
@@ -17,12 +23,25 @@ def load(path, k_col="K", scaffold_filter=None):
     return [(K, sum(v)/len(v)*100, len(v)) for K, v in sorted(by_K.items())]
 
 
+def load_k64_scaffold(path, scaffold):
+    """K=64 point from a scaffold-format CSV (no K column; one row per
+    instance × scaffold). Returns [(64, acc, n)]."""
+    outcomes = []
+    with open(path) as f:
+        for row in csv.DictReader(f):
+            if row.get("scaffold") == scaffold:
+                outcomes.append(int(row["correct"]))
+    return [(64, sum(outcomes) / len(outcomes) * 100, len(outcomes))]
+
+
 # Load all curves
 sweeps = {
     "qwen1.5b · fold1 · verifier_guided": (
         load("data/results_qwen15_ksweep_fold1.csv") +
-        # Append K=64 from the older run
-        [(64, 11/20*100, 20)]
+        # K=64 comes from the earlier scaffold-comparison run (same model,
+        # task, and sampling settings; n=20)
+        load_k64_scaffold("data/results_qwen15_vg64_n20_fold1_txt.csv",
+                          "verifier_guided")
     ),
     "qwen3b · fold1 · verifier_guided":
         load("data/results_ksweep_qwen25_3b_fold1_verifier_guided.csv"),
