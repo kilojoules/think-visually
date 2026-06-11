@@ -20,18 +20,18 @@ def load(path, k_col="K", scaffold_filter=None):
 # Load all curves
 sweeps = {
     "qwen1.5b · fold1 · verifier_guided": (
-        load("results_qwen15_ksweep_fold1.csv") +
+        load("data/results_qwen15_ksweep_fold1.csv") +
         # Append K=64 from the older run
         [(64, 11/20*100, 20)]
     ),
     "qwen3b · fold1 · verifier_guided":
-        load("results_ksweep_qwen25_3b_fold1_verifier_guided.csv"),
+        load("data/results_ksweep_qwen25_3b_fold1_verifier_guided.csv"),
     "qwen1.5b · fold1 · best_partial":
-        load("results_ksweep_qwen25_15b_fold1_best_partial.csv"),
+        load("data/results_ksweep_qwen25_15b_fold1_best_partial.csv"),
     "qwen1.5b · fold2 · verifier_guided":
-        load("results_ksweep_qwen25_15b_fold2_verifier_guided.csv"),
+        load("data/results_ksweep_qwen25_15b_fold2_verifier_guided.csv"),
     "qwen1.5b · maze · verifier_guided":
-        load("results_ksweep_qwen25_15b_maze_verifier_guided.csv"),
+        load("data/results_ksweep_qwen25_15b_maze_verifier_guided.csv"),
 }
 
 # Dedupe Ks (sort + take unique)
@@ -76,6 +76,6 @@ ax.legend(loc="upper left", fontsize=10, framealpha=0.95)
 # Annotations for the key takeaways
 ax.axhline(0, color="black", lw=0.5, alpha=0.5)
 plt.tight_layout()
-out = "all_ksweeps.png"
+out = "figures/all_ksweeps.png"
 plt.savefig(out, dpi=140)
 print(f"\nSaved {out}")

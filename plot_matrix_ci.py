@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-with open("ci_table.json") as f:
+with open("data/ci_table.json") as f:
     data = json.load(f)
 
 models = data["models"]
@@ -56,7 +56,7 @@ for i in range(len(models)):
 cbar = plt.colorbar(im, ax=ax, shrink=0.7)
 cbar.set_label("Accuracy (%) at K=64", fontsize=10)
 plt.tight_layout()
-out = "matrix_with_cis.png"
+out = "figures/matrix_with_cis.png"
 plt.savefig(out, dpi=140)
 print(f"Saved {out}")
 

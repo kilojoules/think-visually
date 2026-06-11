@@ -5,8 +5,8 @@ import matplotlib
 matplotlib.use("Agg")
 
 # Aggregate K-sweep data (includes K=64 from the earlier vg=64 run)
-SWEEP_FILE = "results_qwen15_ksweep_fold1.csv"
-K64_FILE = "results_qwen15_vg64_n20_fold1_txt.csv"
+SWEEP_FILE = "data/results_qwen15_ksweep_fold1.csv"
+K64_FILE = "data/results_qwen15_vg64_n20_fold1_txt.csv"
 
 
 def acc_by_K(path, K_col="K"):
@@ -62,7 +62,7 @@ def main():
         ax.annotate(f"{acc:.0f}%", (k, acc), textcoords="offset points",
                     xytext=(0, 10), ha="center", fontsize=10, color="C3")
     plt.tight_layout()
-    out_path = "ksweep_fold1.png"
+    out_path = "figures/ksweep_fold1.png"
     plt.savefig(out_path, dpi=140)
     print(f"\nSaved {out_path}")
 

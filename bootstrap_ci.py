@@ -12,28 +12,28 @@ MODELS = ["Qwen2.5-1.5B", "Qwen2.5-3B", "Llama-3.2-1B", "Llama-3.2-3B"]
 TASKS = ["fold1", "fold2", "maze"]
 
 FOLD1_FILES = {
-    "Qwen2.5-1.5B": ("results_qwen15_vg64_n20_fold1_txt.csv", "scaffold", "verifier_guided"),
-    "Qwen2.5-3B":   ("results_ksweep_qwen25_3b_fold1_verifier_guided.csv", None, None),
-    "Llama-3.2-1B": ("results_ksweep_llama32_1b_fold1_verifier_guided.csv", None, None),
-    "Llama-3.2-3B": ("results_ksweep_llama32_3b_fold1_verifier_guided.csv", None, None),
+    "Qwen2.5-1.5B": ("data/results_qwen15_vg64_n20_fold1_txt.csv", "scaffold", "verifier_guided"),
+    "Qwen2.5-3B":   ("data/results_ksweep_qwen25_3b_fold1_verifier_guided.csv", None, None),
+    "Llama-3.2-1B": ("data/results_ksweep_llama32_1b_fold1_verifier_guided.csv", None, None),
+    "Llama-3.2-3B": ("data/results_ksweep_llama32_3b_fold1_verifier_guided.csv", None, None),
 }
 FOLD2_FILES = {
-    "Qwen2.5-1.5B": ("results_ksweep_qwen25_15b_fold2_verifier_guided.csv", None, None),
-    "Qwen2.5-3B":   ("results_ksweep_qwen25_3b_fold2_verifier_guided.csv", None, None),
-    "Llama-3.2-1B": ("results_ksweep_llama32_1b_fold2_verifier_guided.csv", None, None),
-    "Llama-3.2-3B": ("results_ksweep_llama32_3b_fold2_verifier_guided.csv", None, None),
+    "Qwen2.5-1.5B": ("data/results_ksweep_qwen25_15b_fold2_verifier_guided.csv", None, None),
+    "Qwen2.5-3B":   ("data/results_ksweep_qwen25_3b_fold2_verifier_guided.csv", None, None),
+    "Llama-3.2-1B": ("data/results_ksweep_llama32_1b_fold2_verifier_guided.csv", None, None),
+    "Llama-3.2-3B": ("data/results_ksweep_llama32_3b_fold2_verifier_guided.csv", None, None),
 }
 MAZE_FILES_BASE = {
-    "Qwen2.5-1.5B": "results_ksweep_qwen25_15b_maze_verifier_guided.csv",
-    "Qwen2.5-3B":   "results_ksweep_qwen25_3b_maze_verifier_guided.csv",
-    "Llama-3.2-1B": "results_ksweep_llama32_1b_maze_verifier_guided.csv",
-    "Llama-3.2-3B": "results_ksweep_llama32_3b_maze_verifier_guided.csv",
+    "Qwen2.5-1.5B": "data/results_ksweep_qwen25_15b_maze_verifier_guided.csv",
+    "Qwen2.5-3B":   "data/results_ksweep_qwen25_3b_maze_verifier_guided.csv",
+    "Llama-3.2-1B": "data/results_ksweep_llama32_1b_maze_verifier_guided.csv",
+    "Llama-3.2-3B": "data/results_ksweep_llama32_3b_maze_verifier_guided.csv",
 }
 MAZE_FILES_EXTRA = {
-    "Qwen2.5-1.5B": "results_maze_extra_qwen25_15b.csv",
-    "Qwen2.5-3B":   "results_maze_extra_qwen25_3b.csv",
-    "Llama-3.2-1B": "results_maze_extra_llama32_1b.csv",
-    "Llama-3.2-3B": "results_maze_extra_llama32_3b.csv",
+    "Qwen2.5-1.5B": "data/results_maze_extra_qwen25_15b.csv",
+    "Qwen2.5-3B":   "data/results_maze_extra_qwen25_3b.csv",
+    "Llama-3.2-1B": "data/results_maze_extra_llama32_1b.csv",
+    "Llama-3.2-3B": "data/results_maze_extra_llama32_3b.csv",
 }
 
 
@@ -85,7 +85,7 @@ def main():
                 "model": model, "task": task,
                 "n": len(outcomes), "mean": mean, "ci_lo": lo, "ci_hi": hi,
             })
-    with open("ci_table.json", "w") as f:
+    with open("data/ci_table.json", "w") as f:
         json.dump(table, f, indent=2)
     print("\nWrote ci_table.json")
 

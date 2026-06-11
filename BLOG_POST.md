@@ -7,7 +7,7 @@ I wanted to actually measure that upper bound. Not at frontier scale — I don't
 
 The headline result is that the upper bound is **deeply task- and model-dependent**, and the dependencies don't follow the patterns you'd expect.
 
-![Heatmap with CIs](matrix_with_cis.png)
+![Heatmap with CIs](figures/matrix_with_cis.png)
 
 Across four small open-weight LLMs (Qwen2.5 and Llama-3.2 at 1.5B-and-3B-class) and three procedural tasks with hand-written physics verifiers, **no model wins more than one task** under verifier-guided rejection sampling at K=64. Qwen2.5-1.5B dominates the easy paper-folding task; Llama-3.2-3B is the only model with meaningful accuracy on the hard paper-folding task; and Llama-3.2-1B — the smallest model in the matrix — wins on the maze task, which has the largest answer space. Bootstrap 95% CIs (n=20 for the fold tasks, n=50 for the maze row) confirm the cell-level winners are statistically separable, not noise dressed as a pattern.
 
@@ -111,7 +111,7 @@ K-sweeps use `--start-seed` to add instances incrementally without re-running th
 
 Memory-safety is enforced by an `available_gb < 1.0` abort check before every model call. (Initially I used `free_gb`, which is a poor measure on macOS — most "free" memory is actually inactive cache that can be reclaimed. The abort threshold should be on `available`, not `free`.)
 
-The full report, harness, and 15+ raw CSVs are at [github link]. Read order: `REPORT.md` first, then the headline chart (`matrix_with_cis.png`), then the supporting K-sweep curves (`cross_family_fold1.png`, `ksweep_fold1.png`).
+The full report, harness, and raw CSVs are at [github.com/kilojoules/think-visually](https://github.com/kilojoules/think-visually). Read order: `REPORT.md` first, then the headline chart (`figures/matrix_with_cis.png`), then the supporting K-sweep curves (`figures/cross_family_fold1.png`, `figures/ksweep_fold1.png`).
 
 ---
 

@@ -19,10 +19,10 @@ def load(path):
 
 def load_qwen15():
     """Qwen-1.5B data comes from two files (K=64 is in a separate run)."""
-    pts = load("results_qwen15_ksweep_fold1.csv")
+    pts = load("data/results_qwen15_ksweep_fold1.csv")
     # Append K=64 from the n=20 vg=64 run
     by_K: dict[int, list[int]] = {}
-    with open("results_qwen15_vg64_n20_fold1_txt.csv") as f:
+    with open("data/results_qwen15_vg64_n20_fold1_txt.csv") as f:
         for row in csv.DictReader(f):
             if row["scaffold"] == "verifier_guided":
                 by_K.setdefault(64, []).append(int(row["correct"]))
@@ -33,9 +33,9 @@ def load_qwen15():
 
 sweeps = {
     "Qwen2.5-1.5B": (None, "C3", "o"),  # loaded via load_qwen15
-    "Qwen2.5-3B":   ("results_ksweep_qwen25_3b_fold1_verifier_guided.csv", "C0", "s"),
-    "Llama-3.2-1B": ("results_ksweep_llama32_1b_fold1_verifier_guided.csv", "C2", "^"),
-    "Llama-3.2-3B": ("results_ksweep_llama32_3b_fold1_verifier_guided.csv", "C1", "D"),
+    "Qwen2.5-3B":   ("data/results_ksweep_qwen25_3b_fold1_verifier_guided.csv", "C0", "s"),
+    "Llama-3.2-1B": ("data/results_ksweep_llama32_1b_fold1_verifier_guided.csv", "C2", "^"),
+    "Llama-3.2-3B": ("data/results_ksweep_llama32_3b_fold1_verifier_guided.csv", "C1", "D"),
 }
 
 fig, ax = plt.subplots(figsize=(9, 5.5))
@@ -65,7 +65,7 @@ ax.set_xticks([1, 4, 16, 64])
 ax.set_xticklabels(["1", "4", "16", "64"])
 ax.legend(loc="upper left", fontsize=11, framealpha=0.95)
 plt.tight_layout()
-out = "cross_family_fold1.png"
+out = "figures/cross_family_fold1.png"
 plt.savefig(out, dpi=140)
 print(f"Saved {out}")
 
