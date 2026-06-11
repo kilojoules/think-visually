@@ -1,0 +1,13 @@
+case,instance,scaffold,correct,valid,seconds,response_head
+fold2_txt,0,bare,0,0,1.08,"(row=1, col=1);(row=2, col=2)"
+fold2_txt,0,self_consist,0,0,1.27,"(row=1, col=1);(row=1, col=2);(row=1, col=3);(row=2, col=3)"
+fold2_txt,0,verifier_guided,0,1,4.04,"(3,3);(3,4)"
+fold2_txt,0,whiteboard,0,1,0.35,"(3, 2);(1, 3)"
+fold2_txt,1,bare,0,0,0.44,"(row=1, col=1);(row=1, col=3)"
+fold2_txt,1,self_consist,0,1,1.08,"(2,0);(2,1)"
+fold2_txt,1,verifier_guided,0,0,4.02,"(row=4, col=2);(col=4)"
+fold2_txt,1,whiteboard,0,1,0.37,"(1, 2);(3, 2)"
+fold2_txt,2,bare,0,0,0.33,"(row=1, col=1);(row=1, col=3)"
+fold2_txt,2,self_consist,0,0,1.17,"(row=1, col=2);(row=3, col=2)"
+fold2_txt,2,verifier_guided,0,0,3.91,"(row=3, col=3);(row=0, col=0)"
+fold2_txt,2,whiteboard,0,1,0.36,"(1, 2);(3, 2)"

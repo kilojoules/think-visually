@@ -1,0 +1,13 @@
+case,instance,scaffold,correct,valid,seconds,response_head
+maze_txt,0,bare,0,1,0.94,"U,L,L,U,U,U,U,D,D"
+maze_txt,0,self_consist,0,1,0.62,"U,L,U,L,U,U,U,U,U"
+maze_txt,0,verifier_guided,0,1,1.13,"U,D,L,L,U,U,U,U"
+maze_txt,0,whiteboard,0,1,2.85,"```python ⏎ from collections import deque ⏎  ⏎ def find_path(maze): ⏎     start = maze.find('S') ⏎     goal = maze.find('G') ⏎  ⏎     directions = [(0, 1), (1, 0), (-1, 0), (0, -1)] ⏎     queue = deque([(start, '')])"
+maze_txt,1,bare,0,1,0.44,"U,L,L,U,U,U,U,D,D,U,U,L,L"
+maze_txt,1,self_consist,0,1,0.59,"D,R,U,U,U,U,U,U"
+maze_txt,1,verifier_guided,0,1,1.18,"R,R,U,U,U,L,L,L"
+maze_txt,1,whiteboard,0,1,6.63,The provided code attempts to solve the maze problem but encounters a TypeError because it tries to access an integer (current_pos) as if it were a list. This issue arises from the way the maze was in
+maze_txt,2,bare,0,1,0.36,"U,L,L,U,U,U,U,D,D,U,U,L,L"
+maze_txt,2,self_consist,0,1,1.71,"U,D,L,L,D,L"
+maze_txt,2,verifier_guided,0,1,1.13,"U,L,U,U,D,D,D,R,R"
+maze_txt,2,whiteboard,0,1,2.81,"```python ⏎ from collections import deque ⏎  ⏎ def find_path(maze): ⏎     start = maze.find('S') ⏎     goal = maze.find('G') ⏎  ⏎     directions = [(0, 1), (1, 0), (-1, 0), (0, -1)] ⏎     queue = deque([(start, '')])"
